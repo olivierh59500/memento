@@ -42,11 +42,12 @@ static void *make_requests(void *t) {
     struct connection *c = (struct connection *) t;
 
     int fd = connectto(c->host, c->port);
-    char real_keys[2000][16];
+    int requests = 8000;
+    char real_keys[requests][16];
     char buf[5];
     float time_elapsed, start_time, end_time, result;
 
-    for (int j = 0; j < 2000; ++j)
+    for (int j = 0; j < requests; ++j)
         snprintf(real_keys[j], 16, "set %d value\r\n", j);
 
     memset(buf, 0x00, 5);
@@ -55,7 +56,7 @@ static void *make_requests(void *t) {
 
     char *cmd = "set keyone valueone\r\n";
     start_time = (float) clock()/CLOCKS_PER_SEC;
-    for (int i = 0; i < 2000; ++i) {
+    for (int i = 0; i < requests; ++i) {
         if (send(fd, cmd, strlen(cmd), 0) < 0)
             perror("send");
         if (read(fd, buf, 5) < 0)
@@ -64,7 +65,7 @@ static void *make_requests(void *t) {
 
     end_time = (float)clock()/CLOCKS_PER_SEC;
     time_elapsed = end_time - start_time;
-    result = 2000 / time_elapsed;
+    result = requests / time_elapsed;
 
     printf(" [SET]");
     printf(" - Elapsed time: %f s  Op/s: %.2f\n", time_elapsed, result);
@@ -75,7 +76,7 @@ static void *make_requests(void *t) {
     memset(getr, 0x00, 10);
     char *get = "get keyone\r\n";
     start_time = (float) clock()/CLOCKS_PER_SEC;
-    for (int i = 0; i < 2000; ++i) {
+    for (int i = 0; i < requests; ++i) {
         if (send(fd, get, strlen(get), 0) < 0)
             perror("send");
         if (read(fd, getr, 10) < 0)
@@ -84,14 +85,14 @@ static void *make_requests(void *t) {
 
     end_time = (float)clock()/CLOCKS_PER_SEC;
     time_elapsed = end_time - start_time;
-    result = 2000 / time_elapsed;
+    result = requests / time_elapsed;
     printf(" [GET]");
     printf(" - Elapsed time: %f s  Op/s: %.2f\n", time_elapsed, result);
 
     /* `SET xxxxx value` benchmark */
 
     start_time = (float) clock()/CLOCKS_PER_SEC;
-    for (int i = 0; i < 2000; ++i) {
+    for (int i = 0; i < requests; ++i) {
         if (send(fd, real_keys[i], strlen(real_keys[i]), 0) < 0)
             perror("send");
         if (read(fd, buf, 5) < 0)
@@ -100,7 +101,7 @@ static void *make_requests(void *t) {
 
     end_time = (float) clock()/CLOCKS_PER_SEC;
     time_elapsed = end_time - start_time;
-    result = 2000 / time_elapsed;
+    result = requests / time_elapsed;
     printf(" [SET]");
     printf(" - Elapsed time: %f s  Op/s: %.2f\n", time_elapsed, result);
 
@@ -112,7 +113,7 @@ int main(int argc, char **argv) {
 
     char *host = "127.0.0.1";
     char *port = "8082";
-    int thread_nr = 50;
+    int thread_nr = 150;
     pthread_t th[thread_nr];
 
     if (argc > 2) {
@@ -130,7 +131,7 @@ int main(int argc, char **argv) {
     printf(" 1) SET keyone valueone\n");
     printf(" 2) GET keyone\n");
     printf(" 3) SET with growing keys\n");
-    printf(" 4) All previous operations in %d threads, each one performing 2000 requests per type\n", thread_nr);
+    printf(" 4) All previous operations in %d threads, each one performing 8000 requests per type\n", thread_nr);
     printf("\n");
 
     for (int j = 0; j < 100000; ++j)
@@ -206,7 +207,7 @@ int main(int argc, char **argv) {
     for (int i = 0; i < thread_nr; ++i) {
         if (pthread_create(&th[i], NULL, make_requests, &conn) < 0)
             perror("pthread");
-        usleep(1000);
+        usleep(10000);
     }
 
     for (int i = 0; i < thread_nr; ++i)
