@@ -19,52 +19,33 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef MAP_H
-#define MAP_H
+#ifndef QUEUE_H
+#define QUEUE_H
 
 
-#define MAP_OK              0
-#define MAP_ERR             -1
-#define MAP_FULL            -2
-#define INITIAL_SIZE        256
-#define MAX_CHAIN_LENGTH    8
+#include <stdlib.h>
+#include <pthread.h>
 
 
-typedef int (*func)(void *, void *);
-typedef int (*func3)(void *, void *, void *);
+typedef struct queue_item {
+    void *data;
+    struct queue_item *next;
+} queue_item;
 
 
-/* We need to keep keys and values */
-typedef struct {
-    void *key;
-    void *val;
-    unsigned int in_use : 1;
-    unsigned int has_expire_time : 1;
-    long creation_time;
-    long expire_time;
-} map_entry;
+typedef struct queue {
+    unsigned long len;
+    queue_item *front;
+    queue_item *rear;
+    pthread_mutex_t lock;
+    pthread_cond_t cond;
+} queue;
 
 
-/*
- * An hashmap has some maximum size and current size, as well as the data to
- * hold.
- */
-typedef struct {
-    unsigned long table_size;
-    unsigned long size;
-    map_entry *entries;
-} map;
-
-
-/* Map API */
-map *map_create(void);
-void map_release(map *);
-int map_put(map *, void *, void *);
-void *map_get(map *, void *);
-map_entry *map_get_entry(map *, void *);
-int map_del(map *, void *);
-int map_iterate2(map *, func, void *);
-int map_iterate3(map *, func3, void *, void *);
+queue *create_queue(void);
+void release_queue(queue *);
+void enqueue(queue *, void *);
+void *dequeue(queue *);
 
 
 #endif

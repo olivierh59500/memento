@@ -48,9 +48,15 @@ int to_int(const char *);
 double to_double(const char *);
 const char *node_name(unsigned int);
 const char *get_homedir(void);
+char *append_string(const char *, const char *);
+void remove_newline(char *);
+
 
 void s_log(loglevel, const char *, ...);
 
 #define LOG(...) s_log( __VA_ARGS__ )
+#define DEBUG(...) LOG(DEBUG, __VA_ARGS__)
+#define ERROR(...) LOG(ERR, __VA_ARGS__)
+#define INFO(...) LOG(INFO, __VA_ARGS__)
 
 #endif
